@@ -17,7 +17,7 @@ src = ['src/stm32l4xx_hal.c',
 
 path = [cwd + '/inc']
 
-CPPDEFINES = ['USE_HAL_DRIVER', rtconfig.STM32_TYPE]
+CPPDEFINES = ['USE_HAL_DRIVER']
 
 if GetDepend(['RT_USING_PIN']):
     src += ['src/stm32l4xx_hal_gpio.c']
