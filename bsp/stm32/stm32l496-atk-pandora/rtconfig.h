@@ -128,9 +128,8 @@
 /* Network */
 
 #define RT_USING_AT
-#define AT_DEBUG
 #define AT_USING_CLIENT
-#define AT_CLIENT_NUM_MAX 1
+#define AT_CLIENT_NUM_MAX 3
 #define AT_USING_CLI
 #define AT_PRINT_RAW_CMD
 #define AT_SW_VERSION_NUM 0x10301
@@ -346,7 +345,6 @@
 /* Onboard Peripheral Drivers */
 
 #define BSP_USING_STLINK_TO_USART
-#define BSP_USING_AHT10
 /* end of Onboard Peripheral Drivers */
 
 /* On-chip Peripheral Drivers */
@@ -357,21 +355,6 @@
 #define BSP_UART1_RX_USING_DMA
 #define BSP_UART1_TX_USING_DMA
 #define BSP_USING_UART2
-#define BSP_UART2_RX_USING_DMA
-#define BSP_UART2_TX_USING_DMA
-#define BSP_USING_I2C
-#define BSP_USING_I2C1
-
-/* Notice: PC7 --> 39; PC6 --> 38 */
-
-#define BSP_I2C1_SCL_PIN 38
-#define BSP_I2C1_SDA_PIN 39
-#define BSP_USING_I2C4
-
-/* Notice: PC1 --> 33; PD6 --> 54 */
-
-#define BSP_I2C4_SCL_PIN 54
-#define BSP_I2C4_SDA_PIN 33
 /* end of On-chip Peripheral Drivers */
 
 /* Board extended module Drivers */
