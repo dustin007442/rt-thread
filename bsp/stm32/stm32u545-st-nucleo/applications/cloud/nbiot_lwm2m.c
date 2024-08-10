@@ -8,20 +8,7 @@
  * 2018-11-06     SummerGift   first version
  * 2023-12-03     Meco Man     support nano version
  */
-#include "nbiot.h"
-
-
-#define QTH_PRODUCTINFO_PK "pe15TE"
-#define QTH_PRODUCTINFO_PS "aXp5Y0hudFBkbmho"
-#define QTH_SERVER "coap://iot-south.quectelcn.com:5683"
-#define QTH_SERVER_TYPE 0
-#define QTH_LIFETIME 86400
-#define QTH_BUFFER_MODE 1
-#define QTH_CONTEXTID 1
-#define QTH_TSL_MODE 1
-#define QTH_REG_MODE 1
-#define DNS_SERVER_MASTER "114.114.114.114"
-#define DNS_SERVER_BACKUP "8.8.8.8"
+#include "nbiot_lwm2m.h"
 
 
 static rt_thread_t nbiot_thread = RT_NULL;
@@ -34,10 +21,10 @@ rt_err_t nbiot_atcmd_send(at_response_t resp, const char *at_string)
     rt_err_t result = RT_ERROR;
     at_client_t client = at_client_get(AT_NBIOT_DEVICE_NAME);
     if (client == RT_NULL) {
-        LOG_E("at client not init.\n");
+        LOG_E("nbiot at client not init.\n");
         return RT_ERROR;
     }
-    LOG_D("atcmd_send: %s", at_string);
+    LOG_D("nbiot_atcmd_send: %s", at_string);
     return at_obj_exec_cmd(client, resp, at_string);
 }
 
@@ -431,7 +418,7 @@ rt_err_t nbiot_qidnscfg(at_response_t resp, const char *dns_master, const char *
 }
 
 
-rt_err_t nbiot_lwm2m_proto_init()
+rt_err_t nbiot_lwm2m_init()
 {
     rt_err_t result = RT_EOK;
     at_response_t resp = RT_NULL;
@@ -444,62 +431,59 @@ rt_err_t nbiot_lwm2m_proto_init()
 
     // nbiot_atcmd_send(RT_NULL, "AT+QIDNSCFG=0,\"114.114.114.114\",\"8.8.8.8\"");
     // set DNS
-    result = nbiot_qidnscfg(resp, DNS_SERVER_MASTER, DNS_SERVER_BACKUP);
+    // result = nbiot_qidnscfg(resp, DNS_SERVER_MASTER, DNS_SERVER_BACKUP);
+    // if (result != RT_EOK) {
+    //     LOG_E("nbiot_qidnscfg err: %d", result);
+    // }
+
+    // set APN
+    result = nbiot_atcmd_send(resp, "AT+CGDCONT=1,\"IP\",\"lpwa.vodafone.iot\"");
     if (result != RT_EOK) {
-        LOG_E("nbiot_qidnscfg err: %d", result);
-        goto ERROR;
+        LOG_E("nbiot set apn err: %d", result);
     }
 
     // set productioninfo
     result = nbiot_qiotcfg_set_productinfo(resp, QTH_PRODUCTINFO_PK, QTH_PRODUCTINFO_PS);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotcfg_set_productinfo err: %d", result);
-        goto ERROR;
     }
 
     // set server
     result = nbiot_qiotcfg_set_server(resp, QTH_SERVER_TYPE, QTH_SERVER);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotcfg_set_server err: %d", result);
-        goto ERROR;
     }
 
     // set lifetime
     result = nbiot_qiotcfg_set_lifetime(resp, QTH_LIFETIME);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotcfg_set_lifetime err: %d", result);
-        goto ERROR;
     }
 
     // set buffer
     result = nbiot_qiotcfg_set_buffer(resp, QTH_BUFFER_MODE);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotcfg_set_buffer err: %d", result);
-        goto ERROR;
     }
 
     // set act
     result = nbiot_qiotcfg_set_act(resp, QTH_CONTEXTID);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotcfg_set_act err: %d", result);
-        goto ERROR;
     }
 
     // set tsl
     result = nbiot_qiotcfg_set_tsl(resp, QTH_TSL_MODE);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotcfg_set_tsl err: %d", result);
-        goto ERROR;
     }
 
     // register
     result = nbiot_qiotreg_set(resp, QTH_REG_MODE);
     if (result != RT_EOK) {
         LOG_E("nbiot_qiotreg_set err: %d", result);
-        goto ERROR;
     }
 
-ERROR:
     at_delete_resp(resp);
     return result;
 }
@@ -580,3 +564,34 @@ rt_err_t report_model_data(at_response_t resp, const char *data, rt_size_t lengt
     LOG_D("rt_sem_take err: %d\n", err);
     return err;
 }
+
+
+rt_err_t nbiot_wait_network_ready()
+{
+    rt_err_t result = RT_EOK;
+    at_response_t resp;
+    int n = 0;
+    int stat = 0; 
+
+    resp = at_create_resp(512, 0, rt_tick_from_millisecond(AT_WAIT_RESP_MAX_MILLISECOND));
+    if (!resp) {
+        LOG_E("No memory for response structure!\n");
+        return -RT_ENOMEM;
+    }
+
+    for (int i=0; i < 60; i++) {
+        result = nbiot_atcmd_send(resp, "AT+CEREG?");
+        if (result == RT_EOK) {
+            at_resp_parse_line_args(resp, 2, "+CEREG: %d,%d", &n, &stat);
+            if (stat == 1 || stat == 5) {
+                LOG_D("NbIot network ready.");
+                return result;
+            }
+        }
+        rt_thread_mdelay(1000);
+    }
+    at_delete_resp(resp);
+    LOG_D("NbIot network not ready.");
+    return result;
+}
+

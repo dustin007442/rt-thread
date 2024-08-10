@@ -1,5 +1,5 @@
-#ifndef __NBIOT_H__
-#define __NBIOT_H__
+#ifndef __NBIOT_LWM2M_H__
+#define __NBIOT_LWM2M_H__
 
 #include <rtthread.h>
 #include <drv_gpio.h>
@@ -14,9 +14,23 @@
 #include <rtdbg.h>
 
 
-#define AT_NBIOT_DEVICE_NAME "uart1"
+#define AT_NBIOT_DEVICE_NAME "uart3"
 #define AT_STRING_MAX_SIZE 512
 #define AT_WAIT_RESP_MAX_MILLISECOND 5000
+
+#define QTH_PRODUCTINFO_PK "pe15TE"
+#define QTH_PRODUCTINFO_PS "aXp5Y0hudFBkbmho"
+// #define QTH_SERVER "coap://iot-south.quectelcn.com:5683"
+#define QTH_SERVER "coap://iot-south.quecteleu.com:5683"
+#define QTH_SERVER_TYPE 0
+#define QTH_LIFETIME 86400
+#define QTH_BUFFER_MODE 1
+#define QTH_CONTEXTID 1
+#define QTH_TSL_MODE 1
+#define QTH_REG_MODE 2
+#define DNS_SERVER_MASTER "114.114.114.114"
+#define DNS_SERVER_BACKUP "8.8.8.8"
+#define APN_NAME "lpwa.vodafone.iot"
 
 
 rt_err_t nbiot_atcmd_send(at_response_t resp, const char *at_string);
@@ -142,7 +156,9 @@ rt_err_t nbiot_at_wakeup(at_response_t resp);
 rt_err_t nbiot_at_sleep(at_response_t resp);
 
 
-rt_err_t nbiot_lwm2m_proto_init();
+rt_err_t nbiot_lwm2m_init();
 
+
+rt_err_t nbiot_wait_network_ready();
 
 #endif
